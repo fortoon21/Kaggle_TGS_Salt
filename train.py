@@ -19,7 +19,7 @@ from metric import dice_loss, iou
 from termcolor import colored
 
 VAL_RATIO = 0.1
-BATCH_SIZE = 8
+BATCH_SIZE = 2
 NUM_PROCESSES = 8
 MEAN, STD = (0.480,), (0.1337,)
 EPOCHS = 360

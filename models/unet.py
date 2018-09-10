@@ -5,23 +5,23 @@ from math import ceil
 import pdb
 
 class double_conv(nn.Module):
-    def __init__(self, in_ch, out_ch,act_fn):
+    def __init__(self, in_ch, out_ch,):
         super(double_conv, self).__init__()
         self.conv=nn.Sequential(
             nn.Conv2d(in_ch, out_ch, 3, padding=1),
             nn.BatchNorm2d(out_ch),
-            act_fn,
+            nn.ReLU(),
             nn.Conv2d(out_ch, out_ch, 3, padding=1),
             nn.BatchNorm2d(out_ch),
-            act_fn
+            nn.ReLU()
         )
     def forward(self, x):
         return self.conv(x)
 
 class inconv(nn.Module):
-    def __init__(self, in_ch, out_ch,act_fn):
+    def __init__(self, in_ch, out_ch):
         super(inconv, self).__init__()
-        self.conv=double_conv(in_ch, out_ch,act_fn)
+        self.conv=double_conv(in_ch, out_ch)
     def forward(self, x):
         return self.conv(x)
 
@@ -33,28 +33,29 @@ class outconv(nn.Module):
         return self.conv(x)
 
 class down(nn.Module):
-    def __init__(self, in_ch, out_ch, act_fn):
+    def __init__(self, in_ch, out_ch):
+        super(down, self).__init__()
         self.mpconv=nn.Sequential(
             nn.MaxPool2d(2),
-            double_conv(in_ch, out_ch, act_fn)
+            double_conv(in_ch, out_ch)
         )
     def forward(self, x):
         return self.mpconv(x)
 
 class up(nn.Module):
-    def __init__(self, in_ch, out_ch,act_fn, bilinear=True):
+    def __init__(self, in_ch, out_ch, bilinear=True):
         super(up, self).__init__()
         if bilinear:
             self.up=nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         else :
             self.up=nn.ConvTranspose2d(in_ch//2, in_ch//2,2, stride=2)
-        self.conv=double_conv(in_ch, out_ch, act_fn)
+        self.conv=double_conv(in_ch, out_ch)
 
     def forward(self, x1,x2):
         x1=self.up(x1)
         diffX=x1.size()[2]-x2.size()[2]
         diffY=x1.size()[3]-x2.size()[3]
-        x2=F.pad(x2, (diffX//2, int(diffX/2), diffY//2, int(diffY/2)))
+        x2=F.pad(x2, (diffX//2, ceil(diffX/2), diffY//2, ceil(diffY/2)))
         x=torch.cat([x2,x1], dim=1)
         x=self.conv(x)
         return x
@@ -68,18 +69,18 @@ class Unet(nn.Module):
 		self.out_dim = out_dim
 		self.num_filter = num_filter
 
-		act_fn = nn.LeakyReLU(0.2, inplace=True)
 
-		self.inc=inconv(in_dim, self.num_filter,act_fn)
-		self.down1 = down(self.num_filter,self.num_filter*2,act_fn)
-		self.down2 = down(self.num_filter*2,self.num_filter*4,act_fn)
-		self.down3 = down(self.num_filter*4,self.num_filter*8,act_fn)
-		self.down4= down(self.num_filter*8,self.num_filter*16, act_fn)
 
-		self.up1 = up(self.num_filter*16,self.num_filter*8,act_fn)
-		self.up2 = up(self.num_filter*8,self.num_filter*4,act_fn)
-		self.up3 = up(self.num_filter*4,self.num_filter*2,act_fn)
-		self.up4 = up(self.num_filter*2,self.num_filter*1,act_fn)
+		self.inc=inconv(in_dim, self.num_filter)
+		self.down1 = down(self.num_filter,self.num_filter*2)
+		self.down2 = down(self.num_filter*2,self.num_filter*4)
+		self.down3 = down(self.num_filter*4,self.num_filter*8)
+		self.down4= down(self.num_filter*8,self.num_filter*8)
+
+		self.up1 = up(self.num_filter*16,self.num_filter*4)
+		self.up2 = up(self.num_filter*8,self.num_filter*2)
+		self.up3 = up(self.num_filter*4,self.num_filter*1)
+		self.up4 = up(self.num_filter*2,self.num_filter*1)
 
 		self.out=outconv(self.num_filter, out_dim)
 
@@ -103,7 +104,7 @@ class Unet(nn.Module):
 
 if __name__ == '__main__':
     # test
-    net = Unet(1,1,16).cuda()
+    net = Unet(1,1,64).cuda()
     pdb.set_trace()
     net(torch.ones([1, 1, 101, 101]).cuda())
     pass
