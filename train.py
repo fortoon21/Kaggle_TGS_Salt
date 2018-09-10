@@ -15,11 +15,12 @@ import random
 from utils import *
 from dataloader import Salt_dataset, transform
 from models.unet import Unet
+from models.pspnet import PSPNet
 from metric import dice_loss, iou
 from termcolor import colored
 
 VAL_RATIO = 0.1
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 NUM_PROCESSES = 8
 MEAN, STD = (0.480,), (0.1337,)
 EPOCHS = 360
@@ -32,7 +33,8 @@ if __name__ == '__main__':
          batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
          for phase in ['train', 'val']}
 
-    net = Unet(1,1,16).cuda()
+    # net = Unet(1,1,16).cuda()
+    net=PSPNet(1).cuda()
     net = nn.DataParallel(net)
     criterion = nn.BCELoss()
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
@@ -113,7 +115,8 @@ if __name__ == '__main__':
 
         if (val_iou/len(dataset['val'])).max() > min_iou:
             min_iou = (val_iou/len(dataset['val'])).max()
-            torch.save(net.state_dict(), 'ckpt/unet2.pth')
+            # torch.save(net.state_dict(), 'ckpt/unet2.pth')
+            torch.save(net.state_dict(), 'ckpt/pspnet2.pth')
             print(colored('model saved', 'red'))
 
     print("train end")
