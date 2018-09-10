@@ -32,7 +32,7 @@ if __name__ == '__main__':
          batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
          for phase in ['train', 'val']}
 
-    net = Unet().cuda()
+    net = Unet(1,1,16).cuda()
     net = nn.DataParallel(net)
     criterion = nn.BCELoss()
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)

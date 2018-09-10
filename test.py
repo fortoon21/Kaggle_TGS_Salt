@@ -19,7 +19,7 @@ if __name__ == '__main__':
          batch_size=1, shuffle=False, num_workers=8)
          
     print('model initalize')
-    net = Unet().cuda()
+    net = Unet(1,1,16).cuda()
     net = nn.DataParallel(net)
     print('model load')
     net.load_state_dict(torch.load('./ckpt/unet.pth'))
